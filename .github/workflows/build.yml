@@ -1,0 +1,142 @@
+name: Lua Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: '5.4'
+
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v5
+        with:
+          luarocksVersion: "3.12.2"
+
+      - name: Install luacheck
+        run: luarocks install luacheck
+
+      - name: Install stylua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.1.0
+          args: false # Will be run as part of `make check`
+
+      - name: Check
+        run: make check
+
+  test:
+    needs: check
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: true
+      matrix:
+        lua-version: ['5.1', '5.2', '5.3', '5.4', 'luajit-2.0', 'luajit-2.1']
+
+    name: Lua ${{ matrix.lua-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: ${{ matrix.lua-version }}
+
+      - name: Setup tests
+        run: |
+          # Set the correct binary name based on the Lua version
+          if [[ "${{ matrix.lua-version }}" == luajit* ]]; then
+            LUA_BINARY=luajit
+          else
+            LUA_BINARY=lua
+          fi
+
+          echo "LUA_BINARY=$LUA_BINARY" >> "$GITHUB_ENV"
+          ${LUA_BINARY} -v
+
+      - name: Run tests
+        run: |
+          make test-all
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build Combined Module
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: '5.4'
+
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v5
+        with:
+          luarocksVersion: "3.12.2"
+
+      - name: Install amalg
+        run: luarocks install amalg
+
+      - name: Build combined module
+        run: make build
+
+      - name: Verify build
+        run: |
+          # Check full build
+          if [ -f "build/bthome.lua" ]; then
+            echo "bthome.lua exists ($(wc -c < "build/bthome.lua") bytes)"
+            if grep -q "bthome" build/bthome.lua; then
+              echo "bthome.lua contains expected content"
+            else
+              echo "bthome.lua seems corrupted"
+              exit 1
+            fi
+          else
+            echo "build/bthome.lua missing"
+            exit 1
+          fi
+
+          # Check core build
+          if [ -f "build/bthome-core.lua" ]; then
+            echo "bthome-core.lua exists ($(wc -c < "build/bthome-core.lua") bytes)"
+            if grep -q "bthome" build/bthome-core.lua; then
+              echo "bthome-core.lua contains expected content"
+            else
+              echo "bthome-core.lua seems corrupted"
+              exit 1
+            fi
+          else
+            echo "build/bthome-core.lua missing"
+            exit 1
+          fi
+
+      - name: Upload bthome.lua artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bthome.lua
+          path: build/bthome.lua
+          retention-days: 30
+
+      - name: Upload bthome-core.lua artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bthome-core.lua
+          path: build/bthome-core.lua
+          retention-days: 30
