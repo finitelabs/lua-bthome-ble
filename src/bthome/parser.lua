@@ -60,9 +60,9 @@ end
 --- @return integer value Signed integer value
 local function read_sint_le(data, offset, length)
   local value = read_uint_le(data, offset, length)
-  local max_positive = math.floor(math.pow(2, length * 8 - 1))
+  local max_positive = math.floor(2 ^ (length * 8 - 1))
   if value >= max_positive then
-    return math.floor(value - math.pow(2, length * 8))
+    return math.floor(value - 2 ^ (length * 8))
   end
   return value
 end
