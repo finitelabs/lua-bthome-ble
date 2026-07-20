@@ -113,17 +113,17 @@ jobs:
             exit 1
           fi
 
-          # Check core build
-          if [ -f "build/bthome-core.lua" ]; then
-            echo "bthome-core.lua exists ($(wc -c < "build/bthome-core.lua") bytes)"
-            if grep -q "bthome" build/bthome-core.lua; then
-              echo "bthome-core.lua contains expected content"
+          # Check portable build (all dependencies bundled)
+          if [ -f "build/bthome-portable.lua" ]; then
+            echo "bthome-portable.lua exists ($(wc -c < "build/bthome-portable.lua") bytes)"
+            if grep -q "bthome" build/bthome-portable.lua; then
+              echo "bthome-portable.lua contains expected content"
             else
-              echo "bthome-core.lua seems corrupted"
+              echo "bthome-portable.lua seems corrupted"
               exit 1
             fi
           else
-            echo "build/bthome-core.lua missing"
+            echo "build/bthome-portable.lua missing"
             exit 1
           fi
 
@@ -134,9 +134,9 @@ jobs:
           path: build/bthome.lua
           retention-days: 30
 
-      - name: Upload bthome-core.lua artifact
+      - name: Upload bthome-portable.lua artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bthome-core.lua
-          path: build/bthome-core.lua
+          name: bthome-portable.lua
+          path: build/bthome-portable.lua
           retention-days: 30

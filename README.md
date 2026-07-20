@@ -17,8 +17,8 @@ cross-platform implementation that runs on Lua 5.1, 5.2, 5.3, 5.4, and LuaJIT.
 Download the single-file distribution from the
 [releases page](https://github.com/finitelabs/lua-bthome-ble/releases):
 
-- **`bthome.lua`** - Full library (includes bitn for bitwise operations)
-- **`bthome-core.lua`** - Core library only (requires external bitn)
+- **`bthome.lua`** - the canonical core build (requires external bitn on the Lua path)
+- **`bthome-portable.lua`** - portable build; bundles bitn (zero external dependencies)
 
 Or clone this repository:
 
@@ -161,8 +161,8 @@ make check
 make build
 
 # Output:
-#   build/bthome.lua      - Full library (includes bitn)
-#   build/bthome-core.lua - Core only (requires external bitn)
+#   build/bthome.lua      - Core (canonical); requires external bitn
+#   build/bthome-portable.lua - Portable; bitn bundled, zero external deps
 ```
 
 ## BTHome Protocol
