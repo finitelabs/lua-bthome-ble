@@ -46,22 +46,23 @@ build/amalg.cache: src/bthome/init.lua
 build: build/amalg.cache
 	@echo "Building single-file distribution..."
 	@if command -v amalg.lua >/dev/null 2>&1; then \
-		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome.lua -C ./build/amalg.cache || exit 1; \
-		echo "Built build/bthome.lua"; \
-		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome-core.lua -C ./build/amalg.cache -i "bitn" || exit 1;\
-		echo "Built build/bthome-core.lua (no vendor dependencies)"; \
+		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome.lua -C ./build/amalg.cache -i "bitn" || exit 1; \
+		echo "Built build/bthome.lua (core; bitn excluded, expected on the path)"; \
+		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome-portable.lua -C ./build/amalg.cache || exit 1;\
+		echo "Built build/bthome-portable.lua (portable; all dependencies bundled)"; \
 		VERSION=$$(git describe --exact-match --tags 2>/dev/null || echo "dev"); \
 		if [ "$$VERSION" != "dev" ]; then \
 			echo "Injecting version $$VERSION..."; \
 			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome.lua && rm build/bthome.lua.bak; \
-			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome-core.lua && rm build/bthome-core.lua.bak; \
+			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome-portable.lua && rm build/bthome-portable.lua.bak; \
 		fi; \
 		echo "Testing version function..."; \
-		LUA_VERSION=$$(lua -e 'local b = require("build.bthome"); print(b.version())' 2>/dev/null || echo "test failed"); \
-		if [ "$$LUA_VERSION" = "$$VERSION" ]; then \
-			echo "Version correctly set to: $$VERSION"; \
+		CORE_VERSION=$$(LUA_PATH="$(LUA_PATH_LOCAL)" lua -e 'local b = require("build.bthome"); print(b.version())' 2>/dev/null || echo "test failed"); \
+		PORTABLE_VERSION=$$(LUA_PATH="$(LUA_PATH_LOCAL)" lua -e 'local b = require("build.bthome-portable"); print(b.version())' 2>/dev/null || echo "test failed"); \
+		if [ "$$CORE_VERSION" = "$$VERSION" ] && [ "$$PORTABLE_VERSION" = "$$VERSION" ]; then \
+			echo "Version correctly set to: $$VERSION (core + portable)"; \
 		else \
-			echo "Version test failed. Expected: $$VERSION, Got: $$LUA_VERSION"; \
+			echo "Version test failed. Expected: $$VERSION, core: $$CORE_VERSION, portable: $$PORTABLE_VERSION"; \
 		fi; \
 	else \
 		echo "Error: amalg not found."; \

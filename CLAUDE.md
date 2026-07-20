@@ -62,7 +62,7 @@ make check
 
 # Build single-file distributions
 make build
-# Output: build/bthome.lua (full) and build/bthome-core.lua (without vendor)
+# Output: build/bthome.lua (core) and build/bthome-portable.lua (bundles bitn)
 
 # Install development dependencies
 make install-deps
@@ -158,8 +158,8 @@ The build process uses `amalg` to create single-file distributions:
 ```bash
 make build
 # Output:
-#   build/bthome.lua      - Full library (includes bitn)
-#   build/bthome-core.lua - Core only (requires external bitn)
+#   build/bthome.lua      - Core (canonical); requires external bitn
+#   build/bthome-portable.lua - Portable; bitn bundled, zero external deps
 ```
 
 Version is automatically injected from git tags during release.
@@ -173,7 +173,7 @@ Version is automatically injected from git tags during release.
   - Build both single-file distributions
 
 - **release.yml**: Runs on version tags (v*)
-  - Builds and publishes release with bthome.lua and bthome-core.lua artifacts
+  - Builds and publishes release with bthome.lua and bthome-portable.lua artifacts
 
 ## Code Style
 
@@ -186,4 +186,4 @@ Version is automatically injected from git tags during release.
 
 - **vendor/bitn.lua**: Vendored bitwise operations library (pure Lua)
   - Provides bit32 operations needed for AES and parsing
-  - Included in bthome.lua build, excluded from bthome-core.lua
+  - Excluded from the bthome.lua (core) build, included in bthome-portable.lua
