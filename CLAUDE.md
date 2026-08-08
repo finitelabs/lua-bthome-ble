@@ -68,6 +68,22 @@ make build
 make install-deps
 ```
 
+### typecheck
+
+`make typecheck` runs lua-language-server against the committed
+`.luarc-typecheck.json`, not whatever `.luarc.json` a developer has locally. It
+catches what luacheck does not: undefined or duplicate `@alias`, returns that
+disagree with `@return`, fields missing from a `@class`.
+
+Two settings in that config are load-bearing. `runtime.version` left unset makes
+the server default to Lua 5.4 and check this library as the wrong language,
+reporting a different set of findings rather than fewer. And `vendor/` is both a
+`library` and an `ignoreDir`, so vendored type definitions resolve without
+vendored code being reported here.
+
+Part of `check`, so CI enforces it. Clean under both 3.18.2 and 3.19.0; CI pins
+3.19.0 because the findings do move between versions.
+
 ## Architecture
 
 ### Module Design
