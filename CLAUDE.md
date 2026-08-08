@@ -74,11 +74,17 @@ make install-deps
 `.luarc-typecheck.json`. It catches what luacheck does not: undefined or duplicate
 `@alias`, returns that disagree with `@return`, fields missing from a `@class`.
 
-`--configpath` displaces `workspace.*` and `runtime.*` from a local `.luarc.json`
-but *merges* `diagnostics.disable`, so a local disable can still suppress a
-finding and produce a green run that fails `Check`. If a local result disagrees
-with CI, look there first, and compare the server version the target prints:
-`install-deps` takes whatever Homebrew has while CI pins 3.19.0.
+`--configpath` displaces each individual setting the committed config declares,
+not each table, so a suppression knob is only closed if it is named. `diagnostics`
+therefore declares four: `enable`, `disable`, `severity` and `globals`. Each was
+measured as a live bypass with a planted probe, `enable: false` silencing the check
+entirely and the rest suppressing individual codes, and each is a no-op on a clean
+tree. Anything under `diagnostics` not in that list is still reachable from a local
+`.luarc.json`, so add it here rather than assume the list is complete.
+
+The server version is not pinned locally, though. `install-deps` takes whatever
+Homebrew has while CI pins 3.19.0, so compare the version the target prints if a
+local result disagrees with CI.
 
 `vendor/` is both a `library` and an `ignoreDir`. `ignoreDir` is what keeps the
 check clean: without it the vendored code is diagnosed here, 7 problems today.

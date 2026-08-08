@@ -20,5 +20,11 @@
       "node_modules",
       "vendor"
     ]
+  },
+  "diagnostics": {
+    "enable": true,
+    "disable": [],
+    "severity": {},
+    "globals": []
   }
 }
