@@ -139,9 +139,9 @@ lint:
 # Type-check annotations with the Lua language server. Catches what luacheck does
 # not: undefined or duplicate `@alias`, returns that disagree with `@return`.
 #
-# The pinned config is load-bearing: `runtime.version` unset defaults to Lua 5.4
-# and checks this library as the wrong language, and `vendor/` is both a
-# `library` and an `ignoreDir` so its definitions resolve without its findings.
+# `vendor/` is both a `library` and an `ignoreDir`: with only the first its code is
+# diagnosed here, with only the second its definitions are lost. `runtime.version`
+# is pinned to LuaJIT because that is what Control4 runs, not to change a count.
 .PHONY: typecheck
 typecheck:
 	@if command -v lua-language-server >/dev/null 2>&1; then \
