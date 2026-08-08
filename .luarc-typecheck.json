@@ -1,6 +1,7 @@
 {
   "runtime": {
-    "version": "LuaJIT"
+    "version": "LuaJIT",
+    "special": {}
   },
   "workspace": {
     "useGitIgnore": false,
@@ -19,6 +20,16 @@
       "dist",
       "node_modules",
       "vendor"
+    ]
+  },
+  "diagnostics": {
+    "enable": true,
+    "disable": [],
+    "severity": {},
+    "globals": [],
+    "globalsRegex": [],
+    "enableScheme": [
+      "file"
     ]
   }
 }
