@@ -155,9 +155,9 @@ Part of `check`, so CI enforces it, against the pinned 3.19.0.
 
 The BTHome library provides parsing for BTHome V1 and V2 BLE advertisements:
 
-- **const.lua**: 92 object ID entries (75 unique names) from the bthome.io/format
-  spec. Not all are sensors — roughly 30 are binary sensors, plus 2 events and 3
-  device-info IDs.
+- **const.lua**: 92 object ID entries (75 unique names, 11 shared across 28
+  entries) from the bthome.io/format spec. Not all are sensors — roughly 30 are
+  binary sensors, plus 2 events and 3 device-info IDs.
 - **event.lua**: Button events (press, double_press, long_press, etc.) and dimmer events
 - **parser.lua**: Main parsing logic for device info, object IDs, and encrypted payloads
 - **crypto/aes_ccm.lua**: AES block cipher and AES-CCM AEAD. `key_expansion`
