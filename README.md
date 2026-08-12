@@ -150,7 +150,7 @@ make test-crypto
 # Run test matrix across Lua versions
 make test-matrix
 
-# Check formatting and linting
+# Check formatting, linting, and types
 make check
 ```
 
@@ -205,7 +205,7 @@ GNU Affero General Public License v3.0 - see LICENSE file for details.
 ## Contributing
 
 Contributions are welcome! Please ensure all tests pass (`make test`) and
-code passes linting (`make check`).
+code passes formatting, lint, and type checks (`make check`).
 
 ## Acknowledgments
 
