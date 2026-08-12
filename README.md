@@ -137,32 +137,48 @@ end
 | Mass          | mass_kg, mass_lb                                                             |
 | Events        | button (press, double_press, long_press), dimmer (rotate_left, rotate_right) |
 
-## Testing
+## Development
+
+### Setup
 
 ```bash
-# Run all tests
-make test
-
-# Run specific module tests
-make test-parser
-make test-crypto
-
-# Run test matrix across Lua versions
-make test-matrix
-
-# Check formatting, linting, and types
-make check
+# Install development dependencies (stylua, luacheck, lua-language-server, amalg)
+make install-deps
 ```
 
-## Building
+### Testing
 
 ```bash
-# Build single-file distributions
-make build
+make test                # Run all tests
+make test-parser         # Run specific module tests
+make test-matrix         # Run tests across all Lua versions
+make test-matrix-parser  # Run specific module across all Lua versions
 
-# Output:
-#   build/bthome.lua      - Core (canonical); requires external bitn
-#   build/bthome-portable.lua - Portable; bitn bundled, zero external deps
+# Or use scripts directly with custom Lua binary
+LUA_BINARY=lua5.1 ./run_tests.sh
+```
+
+### Code Quality
+
+```bash
+make check               # Run format check, lint, and typecheck
+make format              # Format code with stylua
+make format-check        # Check formatting without modifying
+make lint                # Run luacheck
+make typecheck           # Check annotations with lua-language-server
+```
+
+### Building
+
+```bash
+make build               # Build single-file distributions (build/bthome.lua [core], build/bthome-portable.lua)
+make clean               # Remove generated files
+```
+
+### Help
+
+```bash
+make help                # Show all available targets
 ```
 
 ## BTHome Protocol
