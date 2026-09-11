@@ -7,12 +7,18 @@
 --- @class bthome.crypto.aes_ccm
 local aes_ccm = {}
 
-local bit32 = require("bitn").bit32
+local bitn = require("bitn")
+local bit16 = bitn.bit16
+local bit32 = bitn.bit32
+local bit64 = bitn.bit64
 
 -- Local references for performance
+local bit16_u16_to_be_bytes = bit16.u16_to_be_bytes
 local bit32_raw_band = bit32.raw_band
 local bit32_raw_bxor = bit32.raw_bxor
 local bit32_raw_lshift = bit32.raw_lshift
+local bit64_from_number = bit64.from_number
+local bit64_u64_to_be_bytes = bit64.u64_to_be_bytes
 local math_floor = math.floor
 local math_min = math.min
 local string_byte = string.byte
@@ -544,6 +550,14 @@ local function xor_strings(a, b)
   return table_concat(result)
 end
 
+--- Big-endian encoding of n in exactly L bytes (L <= 8).
+--- @param n integer Value to encode
+--- @param L integer Field width in bytes
+--- @return string bytes
+local function be_bytes(n, L)
+  return string_sub(bit64_u64_to_be_bytes(bit64_from_number(n)), 9 - L)
+end
+
 --- Generate CTR counter blocks.
 --- @param nonce string CCM nonce
 --- @param counter integer Counter value (0 for CBC-MAC tag encryption, 1+ for CTR)
@@ -554,18 +568,7 @@ local function generate_counter_block(nonce, counter, L)
   -- Flags = L-1 (for CTR blocks)
   local flags = math_floor(L - 1)
 
-  -- Build counter block
-  local block = string_char(flags) .. nonce
-
-  -- Append counter (big-endian, L bytes)
-  local counter_bytes = {}
-  local temp_counter = counter
-  for i = L, 1, -1 do
-    counter_bytes[i] = string_char(math_floor(temp_counter % 256))
-    temp_counter = math_floor(temp_counter / 256)
-  end
-
-  return block .. table_concat(counter_bytes)
+  return string_char(flags) .. nonce .. be_bytes(counter, L)
 end
 
 --- Compute CBC-MAC authentication tag.
@@ -590,14 +593,7 @@ local function cbc_mac(expanded_key, nr, nonce, aad, plaintext, M, L)
   -- B0 = Flags || Nonce || Q (message length, L bytes, big-endian)
   local b0 = string_char(flags) .. nonce
 
-  -- Append message length (L bytes, big-endian)
-  local msg_len = #plaintext
-  local len_bytes = {}
-  for i = L, 1, -1 do
-    len_bytes[i] = string_char(math_floor(msg_len % 256))
-    msg_len = math_floor(msg_len / 256)
-  end
-  b0 = b0 .. table_concat(len_bytes)
+  b0 = b0 .. be_bytes(#plaintext, L)
 
   -- Initialize CBC-MAC with B0
   local y = aes_encrypt_block(b0, expanded_key, nr)
@@ -607,7 +603,7 @@ local function cbc_mac(expanded_key, nr, nonce, aad, plaintext, M, L)
     local aad_block
     if #aad < 0xFF00 then
       -- Short encoding: 2-byte length prefix
-      aad_block = string_char(math_floor(#aad / 256), math_floor(#aad % 256)) .. aad
+      aad_block = bit16_u16_to_be_bytes(#aad) .. aad
     else
       error("AAD too long")
     end
