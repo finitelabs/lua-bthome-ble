@@ -5,6 +5,10 @@
 --- @class bthome.event
 local event = {}
 
+local bit16 = require("bitn").bit16
+local bit16_band = bit16.band
+local bit16_rshift = bit16.rshift
+
 --- @class BTHomeButtonEvent
 --- @field raw_value integer Raw event byte value
 --- @field event_type integer Event type code
@@ -105,9 +109,8 @@ end
 --- @param value integer The raw 2-byte dimmer value (as little-endian uint16)
 --- @return BTHomeDimmerEvent result Decoded dimmer event with event_type and steps
 function event.decode_dimmer(value)
-  -- Value is read as little-endian uint16: low byte = event_type, high byte = steps
-  local event_type = value % 256
-  local steps = math.floor(value / 256)
+  local event_type = bit16_band(value, 0xFF)
+  local steps = bit16_rshift(value, 8)
 
   return {
     raw_value = value,

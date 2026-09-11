@@ -6,6 +6,10 @@
 --- @class bthome.parser
 local parser = {}
 
+local bitn = require("bitn")
+local bit16_u16_to_le_bytes = bitn.bit16.u16_to_le_bytes
+local bit32_u32_to_le_bytes = bitn.bit32.u32_to_le_bytes
+
 --- BTHome V1 unencrypted service UUID.
 --- @type integer
 parser.UUID_V1_UNENCRYPTED = 0x181C
@@ -74,14 +78,7 @@ end
 --- @param counter integer 32-bit counter
 --- @return string nonce 12-byte nonce
 local function build_v1_nonce(mac, uuid, counter)
-  return mac
-    .. string.char(uuid % 256, math.floor(uuid / 256))
-    .. string.char(
-      counter % 256,
-      math.floor(counter / 256) % 256,
-      math.floor(counter / 65536) % 256,
-      math.floor(counter / 16777216) % 256
-    )
+  return mac .. bit16_u16_to_le_bytes(uuid) .. bit32_u32_to_le_bytes(counter)
 end
 
 --- Build nonce for BTHome V2 encrypted advertisements.
@@ -92,15 +89,7 @@ end
 --- @param counter integer 32-bit counter
 --- @return string nonce 13-byte nonce
 local function build_v2_nonce(mac, uuid, device_info, counter)
-  return mac
-    .. string.char(uuid % 256, math.floor(uuid / 256))
-    .. string.char(device_info)
-    .. string.char(
-      counter % 256,
-      math.floor(counter / 256) % 256,
-      math.floor(counter / 65536) % 256,
-      math.floor(counter / 16777216) % 256
-    )
+  return mac .. bit16_u16_to_le_bytes(uuid) .. string.char(device_info) .. bit32_u32_to_le_bytes(counter)
 end
 
 --- Parse the device info byte to extract flags and version.
