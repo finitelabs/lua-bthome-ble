@@ -37,9 +37,9 @@ lua-bthome-ble/
 └── Makefile               # Build automation
 ```
 
-`vendor/bitn.lua` is a copied release artifact, not a submodule. It was last
-pinned to v0.6.1 for a LuaJIT-2026 signedness fix in bitn's `_compat.lua`; the
-tree does not otherwise record which version is vendored.
+`vendor/bitn.lua` is a copied release artifact, not a submodule. Its `VERSION`
+line (also `bitn.version()`) says which release it is; re-vendor only from the
+GitHub release asset.
 
 ## Key Commands
 

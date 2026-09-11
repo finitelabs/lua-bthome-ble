@@ -47,8 +47,8 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 lua_path="$script_dir/?.lua;$script_dir/?/init.lua;$script_dir/src/?.lua;$script_dir/src/?/init.lua;$script_dir/vendor/?.lua;$LUA_PATH"
 
 # Parse command line arguments to determine which modules to run
-default_modules=("bthome")
-all_modules=("bthome" "const" "event" "crypto" "parser")
+default_modules=("bthome" "lpack")
+all_modules=("bthome" "const" "event" "crypto" "parser" "lpack")
 modules_to_run=("$@")
 
 # Validate modules if specified
@@ -134,6 +134,15 @@ run_selftest "Constants" "const" "bthome.const"
 run_selftest "Events" "event" "bthome.event"
 run_selftest "Crypto" "crypto" "bthome.crypto"
 run_selftest "Parser" "parser" "bthome.parser"
+
+# Control4's LuaJIT has string.pack/unpack as lpack, a different dialect: every
+# selftest again with that shape installed before bitn loads.
+run_test "All selftests with lpack-shaped string.pack" "lpack" "
+    dofile('$script_dir/test/lpack_stub.lua')
+    if not require('bthome').selftest() then
+        os.exit(1)
+    end
+  "
 
 passed_count=${#passed_modules[@]}
 failed_count=${#failed_modules[@]}
