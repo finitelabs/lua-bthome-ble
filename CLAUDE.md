@@ -130,7 +130,7 @@ local `.luarc.json`. Re-run both enumerations when upgrading the server rather t
 assuming this list stayed complete.
 
 The server version is not pinned locally, though. `install-deps` takes whatever
-Homebrew has while CI pins 3.19.0, so compare the version the target prints if a
+Homebrew has while CI pins 3.19.2, so compare the version the target prints if a
 local result disagrees with CI.
 
 `vendor/` is both a `library` and an `ignoreDir`. `ignoreDir` is what keeps the
@@ -146,7 +146,7 @@ the server assumes Lua 5.4 and checks the wrong language. That happens to make n
 difference to the findings here today, unlike in lua-bitn and lua-protobuf where
 5.1-era compat shims trip the deprecation check.
 
-Part of `check`, so CI enforces it, against the pinned 3.19.0.
+Part of `check`, so CI enforces it, against the pinned 3.19.2.
 
 ## Architecture
 
@@ -273,8 +273,8 @@ Version is automatically injected from git tags during release.
 
 - **build.yml**: Runs on push/PR to `main` or `master`
   - `check` job (Lua 5.4 only) — `make check`: stylua format check, luacheck, and
-    typecheck against lua-language-server 3.19.0
-  - `test` job — `make test-all` across Lua 5.1-5.4, LuaJIT 2.0/2.1
+    typecheck against lua-language-server 3.19.2
+  - `test` job — `make test-all` across Lua 5.1-5.5, LuaJIT 2.0/2.1
   - `build` job — both single-file distributions
   - Jobs are chained `check` → `test` → `build` with `fail-fast`, so a formatting
     slip stops the run before any test executes.

@@ -2,12 +2,13 @@
 
 A pure Lua [BTHome](https://bthome.io) BLE advertisement parser with **zero external dependencies**. Supports both V1
 and V2 formats, including encrypted advertisements with AES-128-CCM decryption. This library provides a complete,
-cross-platform implementation that runs on Lua 5.1, 5.2, 5.3, 5.4, and LuaJIT.
+cross-platform implementation that runs on Lua 5.1, 5.2, 5.3, 5.4, 5.5, and
+LuaJIT.
 
 ## Features
 
 - **Zero Dependencies**: Pure Lua implementation, no C extensions required
-- **Portable**: Runs on Lua 5.1, 5.2, 5.3, 5.4, and LuaJIT
+- **Portable**: Runs on Lua 5.1, 5.2, 5.3, 5.4, 5.5, and LuaJIT
 - **Complete**: Supports 78+ sensor types from the BTHome specification
 - **Encryption**: AES-128-CCM decryption for encrypted advertisements
 - **Well-tested**: 70+ self-tests with vectors from the official bthome-ble implementation
