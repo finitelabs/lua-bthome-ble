@@ -10,6 +10,9 @@
 #   ./run_tests.sh const parser       # Run only const and parser
 #
 # Available modules: bthome, const, event, crypto, parser
+#
+# TEST_BUNDLE=build/bthome.lua runs the same tests against that built file, with src/
+# off the path so nothing can load from it.
 
 set -e  # Exit on any error
 
@@ -44,7 +47,14 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Add repository root to Lua's package path
 # This allows require() to find modules in the src/vendor directories
-lua_path="$script_dir/?.lua;$script_dir/?/init.lua;$script_dir/src/?.lua;$script_dir/src/?/init.lua;$script_dir/vendor/?.lua;$LUA_PATH"
+lua_path="$script_dir/?.lua;$script_dir/?/init.lua;$script_dir/src/?.lua;$script_dir/src/?/init.lua;$script_dir/vendor/?.lua;$script_dir/test/?.lua;$LUA_PATH"
+load_lib=""
+if [ -n "$TEST_BUNDLE" ]; then
+    [ -f "$TEST_BUNDLE" ] || { echo -e "${red}Error: $TEST_BUNDLE not found; run make build${nc}"; exit 1; }
+    echo "Testing the built bundle: $TEST_BUNDLE"
+    lua_path="$script_dir/test/?.lua;$script_dir/vendor/?.lua"
+    load_lib="package.preload['bthome'] = assert(loadfile('$TEST_BUNDLE')); require('bthome');"
+fi
 
 # Parse command line arguments to determine which modules to run
 default_modules=("bthome" "lpack")
@@ -119,9 +129,10 @@ run_test() {
 run_selftest() {
   local module_name="$1"
   local module_key="$2"
-  local lua_module="$3"
+  local test_file="$3"
   run_test "$module_name" "$module_key" "
-    local result = require('$lua_module').selftest()
+    $load_lib
+    local result = dofile('$script_dir/test/$test_file')()
     if not result then
         os.exit(1)
     end
@@ -129,17 +140,23 @@ run_selftest() {
 }
 
 # Run module tests
-run_selftest "BTHome (full)" "bthome" "bthome"
-run_selftest "Constants" "const" "bthome.const"
-run_selftest "Events" "event" "bthome.event"
-run_selftest "Crypto" "crypto" "bthome.crypto"
-run_selftest "Parser" "parser" "bthome.parser"
+run_test "BTHome (full)" "bthome" "
+    $load_lib
+    if not dofile('$script_dir/test/with_tests.lua').selftest() then
+        os.exit(1)
+    end
+  "
+run_selftest "Constants" "const" "test_const.lua"
+run_selftest "Events" "event" "test_event.lua"
+run_selftest "Crypto" "crypto" "test_crypto_aes_ccm.lua"
+run_selftest "Parser" "parser" "test_parser.lua"
 
 # Control4's LuaJIT has string.pack/unpack as lpack, a different dialect: every
-# selftest again with that shape installed before bitn loads.
-run_test "All selftests with lpack-shaped string.pack" "lpack" "
+# test again with that shape installed before bitn loads.
+run_test "All tests with lpack-shaped string.pack" "lpack" "
     dofile('$script_dir/test/lpack_stub.lua')
-    if not require('bthome').selftest() then
+    $load_lib
+    if not dofile('$script_dir/test/with_tests.lua').selftest() then
         os.exit(1)
     end
   "

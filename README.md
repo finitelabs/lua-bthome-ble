@@ -11,7 +11,8 @@ LuaJIT.
 - **Portable**: Runs on Lua 5.1, 5.2, 5.3, 5.4, 5.5, and LuaJIT
 - **Complete**: Supports 78+ sensor types from the BTHome specification
 - **Encryption**: AES-128-CCM decryption for encrypted advertisements
-- **Well-tested**: 70+ self-tests with vectors from the official bthome-ble implementation
+- **Well-tested**: 70+ tests with vectors from the official bthome-ble
+  implementation, run against the source and the built files
 
 ## Installation
 
@@ -20,6 +21,9 @@ Download the single-file distribution from the
 
 - **`bthome.lua`** - the canonical core build (requires external bitn on the Lua path)
 - **`bthome-portable.lua`** - portable build; bundles bitn (zero external dependencies)
+- **`bthome-tests.lua`** - the portable build plus every test, for running them
+  where the library runs; `dofile("bthome-tests.lua")` returns the library with
+  `selftest()` added. The other two files carry no test code.
 
 Or clone this repository:
 
@@ -154,6 +158,7 @@ make test                # Run all tests
 make test-parser         # Run specific module tests
 make test-matrix         # Run tests across all Lua versions
 make test-matrix-parser  # Run specific module across all Lua versions
+make build test-bundle   # Run the tests against the built files
 
 # Or use scripts directly with custom Lua binary
 LUA_BINARY=lua5.1 ./run_tests.sh
@@ -172,7 +177,7 @@ make typecheck           # Check annotations with lua-language-server
 ### Building
 
 ```bash
-make build               # Build single-file distributions (build/bthome.lua [core], build/bthome-portable.lua)
+make build               # Build bthome.lua (core), bthome-portable.lua and bthome-tests.lua
 make clean               # Remove generated files
 ```
 

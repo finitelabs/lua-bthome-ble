@@ -8,10 +8,4 @@ local crypto = {
   aes_ccm = require("bthome.crypto.aes_ccm"),
 }
 
---- Run self-tests for crypto module.
---- @return boolean success True if all tests passed
-function crypto.selftest()
-  return crypto.aes_ccm.selftest()
-end
-
 return crypto
