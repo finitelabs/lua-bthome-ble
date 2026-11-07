@@ -755,7 +755,7 @@ function aes_ccm.decrypt(key, nonce, aad, ciphertext_and_tag, tag_length)
   return plaintext_str
 end
 
--- Private functions and values the tests in test/ check directly.
+-- Private functions the tests in test/ check directly.
 aes_ccm._internal = {
   key_expansion = key_expansion,
   aes_encrypt_block = aes_encrypt_block,

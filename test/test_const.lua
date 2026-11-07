@@ -1,5 +1,3 @@
---- Tests for bthome.const: `make test` runs them, and so does the with-tests build's selftest().
-
 local const = require("bthome.const")
 
 --- Run self-tests.

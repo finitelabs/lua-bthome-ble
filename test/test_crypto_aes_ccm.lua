@@ -1,5 +1,3 @@
---- Tests for bthome.crypto.aes_ccm: `make test` runs them, and so does the with-tests build's selftest().
-
 local aes_ccm = require("bthome.crypto.aes_ccm")
 local string_byte = string.byte
 local string_char = string.char

@@ -1,5 +1,3 @@
---- Tests for bthome.parser: `make test` runs them, and so does the with-tests build's selftest().
-
 local parser = require("bthome.parser")
 
 --- Run self-tests.

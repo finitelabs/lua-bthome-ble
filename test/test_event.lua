@@ -1,5 +1,3 @@
---- Tests for bthome.event: `make test` runs them, and so does the with-tests build's selftest().
-
 local event = require("bthome.event")
 
 --- Run self-tests.
