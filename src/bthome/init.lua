@@ -42,47 +42,4 @@ end
 
 bthome.parse = bthome.parser.parse
 
---- Run self-tests for all modules.
---- @return boolean success True if all tests passed
-function bthome.selftest()
-  print("BTHome Library Self-Test")
-  print("========================")
-  print("")
-
-  local all_passed = true
-
-  -- Test const module
-  local const_ok = bthome.const.selftest()
-  if not const_ok then
-    all_passed = false
-  end
-
-  -- Test event module
-  local event_ok = bthome.event.selftest()
-  if not event_ok then
-    all_passed = false
-  end
-
-  -- Test crypto module
-  local crypto_ok = bthome.crypto.selftest()
-  if not crypto_ok then
-    all_passed = false
-  end
-
-  -- Test parser module
-  local parser_ok = bthome.parser.selftest()
-  if not parser_ok then
-    all_passed = false
-  end
-
-  print("")
-  if all_passed then
-    print("All BTHome tests passed!")
-  else
-    print("Some BTHome tests failed!")
-  end
-
-  return all_passed
-end
-
 return bthome

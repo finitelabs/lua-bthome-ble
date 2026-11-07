@@ -4,6 +4,11 @@ LUAROCKS_PATH := $(shell luarocks path --lr-path 2>/dev/null)
 # Lua path for local modules (src, vendor)
 LUA_PATH_LOCAL := ./?.lua;./?/init.lua;./src/?.lua;./src/?/init.lua;./vendor/?.lua;$(LUAROCKS_PATH)
 
+# Lua path for the with-tests build: the library plus test/
+LUA_PATH_TESTS := ./test/?.lua;$(LUA_PATH_LOCAL)
+
+LUA_BINARY ?= lua
+
 # Default target
 .PHONY: all
 all: format lint test build
@@ -28,7 +33,14 @@ test-matrix-%:
 test-%:
 	./run_tests.sh $*
 
-build/amalg.cache: src/bthome/init.lua
+# Run the tests against what ships: build/bthome.lua with src/ off the path, then the
+# with-tests build's own selftest()
+.PHONY: test-bundle
+test-bundle:
+	TEST_BUNDLE=build/bthome.lua ./run_tests.sh all
+	LUA_PATH= $(LUA_BINARY) -e 'os.exit(dofile("build/bthome-tests.lua").selftest() and 0 or 1)'
+
+build/amalg.cache: $(shell find src -name '*.lua')
 	@echo "Generating amalgamation cache..."
 	@mkdir -p build
 	@if command -v amalg.lua >/dev/null 2>&1; then \
@@ -41,22 +53,37 @@ build/amalg.cache: src/bthome/init.lua
 		exit 1; \
 	fi
 
+# The with-tests build's modules: everything test/with_tests.lua loads
+build/amalg-tests.cache: $(shell find src test -name '*.lua')
+	@echo "Generating amalgamation cache for the with-tests build..."
+	@mkdir -p build
+	@LUA_PATH="$(LUA_PATH_TESTS)" lua -lamalg test/with_tests.lua && mv amalg.cache build/amalg-tests.cache
+
 # Build single-file distributions
 .PHONY: build
-build: build/amalg.cache
+build: build/amalg.cache build/amalg-tests.cache
 	@echo "Building single-file distribution..."
 	@if command -v amalg.lua >/dev/null 2>&1; then \
 		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome.lua -C ./build/amalg.cache -i "bitn" || exit 1; \
 		echo "Built build/bthome.lua (core; bitn excluded, expected on the path)"; \
+		LUA_PATH="$(LUA_PATH_TESTS)" amalg.lua -o build/bthome-tests.lua -C ./build/amalg-tests.cache || exit 1; \
+		echo "Built build/bthome-tests.lua (with tests; all dependencies bundled)"; \
+		if grep -n -E 'selftest|benchmark' build/bthome.lua; then \
+			echo "build/bthome.lua carries test code; tests belong in test/ and bench/"; \
+			exit 1; \
+		fi; \
 		LUA_PATH="$(LUA_PATH_LOCAL)" amalg.lua -o build/bthome-portable.lua -C ./build/amalg.cache || exit 1;\
 		echo "Built build/bthome-portable.lua (portable; all dependencies bundled)"; \
 		VERSION=$$(git describe --exact-match --tags 2>/dev/null || echo "dev"); \
 		if [ "$$VERSION" != "dev" ]; then \
 			echo "Injecting version $$VERSION..."; \
 			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome.lua && rm build/bthome.lua.bak; \
+			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome-tests.lua && rm build/bthome-tests.lua.bak; \
 			sed -i.bak 's/VERSION = "dev"/VERSION = "'$$VERSION'"/' build/bthome-portable.lua && rm build/bthome-portable.lua.bak; \
 		fi; \
 		echo "Testing version function..."; \
+		TESTS_VERSION=$$(LUA_PATH= lua -e 'local b = dofile("build/bthome-tests.lua"); print(b.version())' 2>/dev/null || echo "test failed"); \
+		if [ "$$TESTS_VERSION" != "$$VERSION" ]; then echo "Version test failed for build/bthome-tests.lua: $$TESTS_VERSION"; fi; \
 		CORE_VERSION=$$(LUA_PATH="$(LUA_PATH_LOCAL)" lua -e 'local b = require("build.bthome"); print(b.version())' 2>/dev/null || echo "test failed"); \
 		PORTABLE_VERSION=$$(LUA_PATH="$(LUA_PATH_LOCAL)" lua -e 'local b = require("build.bthome-portable"); print(b.version())' 2>/dev/null || echo "test failed"); \
 		if [ "$$CORE_VERSION" = "$$VERSION" ] && [ "$$PORTABLE_VERSION" = "$$VERSION" ]; then \
@@ -106,7 +133,7 @@ format:
 		echo "Running stylua..."; \
 		stylua --indent-type Spaces --column-width 120 --line-endings Unix \
 			--indent-width 2 --quote-style AutoPreferDouble \
-			src/ 2>/dev/null; \
+			src/ test/ 2>/dev/null; \
 	else \
 		echo "stylua not found. Install with: make install-deps"; \
 		exit 1; \
@@ -119,7 +146,7 @@ format-check:
 		echo "Running stylua check..."; \
 		stylua --check --indent-type Spaces --column-width 120 --line-endings Unix \
 			--indent-width 2 --quote-style AutoPreferDouble \
-			src/; \
+			src/ test/; \
 	else \
 		echo "stylua not found. Install with: make install-deps"; \
 		exit 1; \
@@ -130,7 +157,7 @@ format-check:
 lint:
 	@if command -v luacheck >/dev/null 2>&1; then \
 		echo "Running luacheck..."; \
-		luacheck src/; \
+		luacheck src/ test/; \
 	else \
 		echo "luacheck not found. Install with: make install-deps"; \
 		exit 1; \
@@ -172,9 +199,10 @@ help:
 	@echo "  make test-<name>        - Run specific test (e.g., make test-bthome)"
 	@echo "  make test-matrix        - Run tests across all Lua versions"
 	@echo "  make test-matrix-<name> - Run specific test across all Lua versions"
+	@echo "  make test-bundle        - Run the tests against the built files (after make build)"
 	@echo ""
 	@echo "Building:"
-	@echo "  make build              - Build single-file distributions"
+	@echo "  make build              - Build the single files, bthome-tests.lua included"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make check              - Run format-check, lint, and typecheck"

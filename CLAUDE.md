@@ -25,6 +25,10 @@ lua-bthome-ble/
 │   └── crypto/
 │       ├── init.lua       # Crypto aggregator
 │       └── aes_ccm.lua    # AES-128 + AES-CCM AEAD for BTHome encryption
+├── test/
+│   ├── test_<module>.lua  # Each module's tests; returns the test function
+│   ├── lpack_stub.lua     # Control4's lpack-shaped string.pack, for the lpack run
+│   └── with_tests.lua     # Main chunk of the with-tests build; selftest() over all
 ├── vendor/
 │   └── bitn.lua           # Vendored bitwise operations library
 ├── .github/workflows/
@@ -219,8 +223,8 @@ local result = bthome.parse(bthome.UUID_V1_ENCRYPTED, service_data, bind_key, ma
 `parser.parse` returns `result` or `nil, error_message` for **parse** failures.
 Two qualifications matter:
 
-- **It is not universal.** `bthome.version()` returns a string, `bthome.selftest()`
-  a boolean, `const.get_object()` a bare `nil` with no second value, and the
+- **It is not universal.** `bthome.version()` returns a string,
+  `const.get_object()` a bare `nil` with no second value, and the
   `event.decode_*` functions always return a table.
 - **It does throw on mistyped arguments.** The `nil, err` contract covers bad
   *data*, not bad *calls*. `parse(nil, data)` raises from `string.format`, and
@@ -242,19 +246,27 @@ one unsupported measurement stops reporting entirely.
 
 ## Testing
 
-Each module ships a `selftest()` returning a boolean, driven by the shell runner:
+Nothing under `src/` is test code. `test/test_<module>.lua` returns a function
+that runs that module's tests and returns a boolean; aes_ccm's test reads two
+private functions from `aes_ccm._internal`. The shell runner calls them:
 
 ```bash
 ./run_tests.sh          # or `make test`
 make test-parser        # one module
 make test-matrix        # across Lua versions
+make build test-bundle  # the same tests against the built files
 ```
 
 Available test modules: bthome, const, event, crypto, parser.
 
 `make test` runs `run_tests.sh` with no arguments, whose default module list is
-just `bthome`; the others are reached only transitively through
-`bthome.selftest()`. CI runs `make test-all`, which is the wider run.
+just `bthome`, which runs `test/with_tests.lua`'s `selftest()` over all four.
+CI runs `make test-all`, which is the wider run.
+
+`TEST_BUNDLE=build/bthome.lua ./run_tests.sh` loads that file first and takes
+`src/` off the path, so a module missing from the bundle fails instead of
+loading from source. `make build` fails if `build/bthome.lua` mentions
+`selftest` or `benchmark`.
 
 ## Building
 
@@ -265,22 +277,27 @@ make build
 # Output:
 #   build/bthome.lua      - Core (canonical); requires external bitn
 #   build/bthome-portable.lua - Portable; bitn bundled, zero external deps
+#   build/bthome-tests.lua    - Portable plus test/, from test/with_tests.lua
 ```
 
-Version is automatically injected from git tags during release.
+`dofile("build/bthome-tests.lua")` returns the library with `selftest()` added,
+for running the tests where the library runs. Version is automatically injected
+from git tags during release.
 
 ## CI/CD
 
 - **build.yml**: Runs on push/PR to `main` or `master`
   - `check` job (Lua 5.4 only) — `make check`: stylua format check, luacheck, and
     typecheck against lua-language-server 3.19.2
-  - `test` job — `make test-all` across Lua 5.1-5.5, LuaJIT 2.0/2.1
-  - `build` job — both single-file distributions
-  - Jobs are chained `check` → `test` → `build` with `fail-fast`, so a formatting
+  - `build` job — the three single files, uploaded as the `bthome` artifact
+  - `test` job — `make test-all test-bundle` across Lua 5.1-5.5, LuaJIT 2.0/2.1,
+    on the build job's files
+  - Jobs are chained `check` → `build` → `test` with `fail-fast`, so a formatting
     slip stops the run before any test executes.
 
 - **release.yml**: Runs on version tags (v*)
-  - Builds and publishes release with bthome.lua and bthome-portable.lua artifacts
+  - Builds, runs `make test-bundle`, and publishes bthome.lua,
+    bthome-portable.lua and bthome-tests.lua
 
 ## Code Style
 
